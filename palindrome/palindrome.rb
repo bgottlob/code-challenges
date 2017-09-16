@@ -56,52 +56,6 @@ def max(*strs)
   (strs.flatten.sort { |x,y| max_cmp(x,y) })[0]
 end
 
-# Third parameter specifies whether at least one character has been selected
-# from each substring already, since the substrings from each can't be empty
-# to satisfy the problem
-def palindrome_recurse_old(x, y, a_match)
-  #puts "Recursing on #{x} | #{y} | #{a_match.inspect}"
-  if !(x.empty? || y.empty?)
-    # Find the rightmost match of the first character of x
-    if !a_match && (idx = y.rindex(x[0])) # rindex should only happen when there hasn't been a first character match
-      #puts "Recursing on #{idx} of y"
-      palins = []
-      if idx == 0
-        # y needs to be an empty string when recursing now, slicing using the
-        # same expression won't yield an empty string
-        palins << "#{x[0]}#{palindrome_recurse(x[1..-1], '', true)}#{y[idx]}"
-      else
-        palins << "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..(idx - 1)], true)}#{y[idx]}"
-        # Must also check the same combination for any additional matches of x[0]
-        # to the left of the current match in y
-        # TODO: Figure out how to trigger this so that it doesn't add to the
-        # current solution -- it is generating things that it thinks are
-        # substrings but arent
-        # Don't know if I actually need this now
-        palins << palindrome_recurse(x, y[0..(idx-1)], false)
-      end
-
-      max(palins)
-    elsif a_match && (x[0] == y[0]) # There's already been a match so you can't skip over any characters on the ends now
-      "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..-2], true)}#{y[0]}"
-    else
-      # If it's guaranteed there is one character from each substring at a higher
-      # level already, the left and right anchored palindromes can be checked
-      if a_match
-        max(left_palindrome(x), right_palindrome(y))
-      else
-        palindrome_recurse(x[1..-1], y, false)
-      end
-    end
-  elsif a_match
-    #puts "x or y is empty, checking anchored palindromes"
-    max(left_palindrome(x), right_palindrome(y))
-  else
-    #puts "x or y is empty and there were no matches, returning emtpy str"
-    ''
-  end
-end
-
 def palindrome_recurse(x, y, a_match)
   #puts "Recursing on #{x} | #{y} | #{a_match}"
   if !a_match
