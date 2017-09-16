@@ -57,56 +57,85 @@ def max(*strs)
 end
 
 def palindrome_recurse(x, y, a_match)
-  #puts "Recursing on #{x} | #{y} | #{a_match}"
-  if !a_match
-    # rindex only happens when starting from scratch because characters can be
-    # skipped
-    if x.empty? || y.empty?
-      #puts "x or y is empty and there was no match, returning empty string"
-      # Base case
-      ''
-    elsif (idx = y.rindex(x[0]))
-      #puts "Found rindex match on #{idx} of y"
-      if idx == 0
-        # y needs to be an empty string when recursing now, slicing using the
-        # same expression won't yield an empty string
-        "#{x[0]}#{palindrome_recurse(x[1..-1], '', true)}#{y[idx]}"
-      else
-        palins = []
-        palins << "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..(idx - 1)], true)}#{y[idx]}"
-        # Must also check the same combination for any additional matches of x[0]
-        # to the left of the current match in y
-        # TODO: Figure out how to trigger this so that it doesn't add to the
-        # current solution -- it is generating things that it thinks are
-        # substrings but arent
-        # Don't know if I actually need this now
-        palins << palindrome_recurse(x, y[0..(idx-1)], false)
-        max(palins)
-      end
-    else
-      palindrome_recurse(x[1..-1], y, false)
-    end
-  #elsif a_match
+  #puts "Calling recurse on #{x} | #{y} | #{a_match}"
+  if (final = cache_lookup(x, y))
+    #puts "Got a lookup hit! #{final.inspect}"
+    final
   else
-    # There's already been a match so you can't skip over any characters on the ends now
-    if x.empty? || y.empty?
-      #puts "x or y is empty and there was a match, checking anchors"
-      max(left_palindrome(x), right_palindrome(y))
-    elsif x[0] == y[-1]
-      "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..-2], true)}#{y[-1]}"
-    else
-      #puts "no match of first char of x and last char of y and there was a match, checking anchors"
-      max(left_palindrome(x), right_palindrome(y))
-    end
+    #puts "Recursing on #{x} | #{y} | #{a_match}"
+    final =
+      if !a_match
+        # rindex only happens when starting from scratch because characters can be
+        # skipped
+        if x.empty? || y.empty?
+          #puts "x or y is empty and there was no match, returning empty string"
+          # Base case
+          ''
+        elsif (idx = y.rindex(x[0]))
+          #puts "Found rindex match on #{idx} of y"
+          if idx == 0
+            # y needs to be an empty string when recursing now, slicing using the
+            # same expression won't yield an empty string
+            "#{x[0]}#{palindrome_recurse(x[1..-1], '', true)}#{y[idx]}"
+          else
+            palins = []
+            palins << "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..(idx - 1)], true)}#{y[idx]}"
+            # Must also check the same combination for any additional matches of x[0]
+            # to the left of the current match in y
+            # TODO: Figure out how to trigger this so that it doesn't add to the
+            # current solution -- it is generating things that it thinks are
+            # substrings but arent
+            # Don't know if I actually need this now
+            palins << palindrome_recurse(x, y[0..(idx-1)], false)
+            max(palins)
+          end
+        else
+          palindrome_recurse(x[1..-1], y, false)
+        end
+        #elsif a_match
+      else
+        # There's already been a match so you can't skip over any characters on the ends now
+        if x.empty? || y.empty?
+          #puts "x or y is empty and there was a match, checking anchors"
+          max(left_palindrome(x), right_palindrome(y))
+        elsif x[0] == y[-1]
+          "#{x[0]}#{palindrome_recurse(x[1..-1], y[0..-2], true)}#{y[-1]}"
+        else
+          #puts "no match of first char of x and last char of y and there was a match, checking anchors"
+          max(left_palindrome(x), right_palindrome(y))
+        end
+      end
+
+    #puts "Adding #{final.inspect} to cache for #{x} | #{y}"
+    cache_add_value(x, y, final)
+    #puts $cache.inspect
+    final
+  end
+end
+
+# Cache is meant to be a hash
+def cache_add_value(x, y, value)
+  $cache[x] = {} unless $cache[x]
+  $cache[x][y] = value
+end
+
+def cache_lookup(x, y)
+  if $cache[x]
+    $cache[x][y]
+  else
+    nil
   end
 end
 
 def palindrome(x, y)
-  palins = []
-  (x.length - 1).times do |i|
-    palins << palindrome_recurse(x[i..-1], y, false)
-  end
-  res = max(palins)
+  #puts 'Clearing cache!'
+  $cache = {}
+  #palins = []
+  #(x.length - 1).times do |i|
+  #  palins << palindrome_recurse(x[i..-1], y, false)
+  #end
+  #res = max(palins)
+  res = palindrome_recurse(x,y,false)
   if (res == '' || res == nil) then -1 else res end
 end
 
@@ -118,5 +147,5 @@ def solution(instream, outstream)
   end
 end
 #solution(File.open('my-testcases-for-run-again.txt', 'r'), STDOUT)
-#solution(File.open('input01.txt', 'r'), STDOUT)
-solution(STDIN, STDOUT)
+solution(File.open('input01.txt', 'r'), STDOUT)
+#solution(STDIN, STDOUT)
